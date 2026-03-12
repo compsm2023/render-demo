@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request
 import pickle
 import numpy as np
+import os
 
 app = Flask(__name__)
 
-# Load trained model
-model = pickle.load(open("sales_model.pkl", "rb"))
+with open("sales_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
 @app.route("/")
 def home():
@@ -13,7 +14,6 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-
     tv = float(request.form["tv"])
     radio = float(request.form["radio"])
     newspaper = float(request.form["newspaper"])
@@ -22,8 +22,8 @@ def predict():
 
     prediction = model.predict(features)
 
-    # Safely convert model output (any array shape) to a single Python float
     pred_arr = np.asarray(prediction, dtype=float)
+
     if pred_arr.size == 0:
         result = 0.0
     else:
@@ -31,8 +31,9 @@ def predict():
 
     return render_template(
         "index.html",
-        prediction_text="Predicted Sales = {}".format(round(result,2))
+        prediction_text="Predicted Sales = {}".format(round(result, 2))
     )
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
